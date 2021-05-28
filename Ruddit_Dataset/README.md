@@ -1,13 +1,13 @@
-Ruddit: Norms of Offensiveness for English Reddit Comments
+#Ruddit: Norms of Offensiveness for English Reddit Comments
 ----------------------------------------------------------
 
 Ruddit is a dataset of English language Reddit comments that has fine-grained, real-valued scores between -1 (maximally supportive) and 1 (maximally offensive).
 
 Data sampling procedure, annotation, and analysis have been discussed in detail in the accompanying paper.
 
-We provide the comment IDs and not the comment body, in accordance to the GDPR regulations. Comment body can be extracted from the Pushshift repository using the IDs provided. Refer the paper 'The Pushshift Reddit Dataset' (https://arxiv.org/pdf/2001.08435.pdf) for more details.
+We provide the comment IDs, post IDs and not the comment body, in accordance to the GDPR regulations. Comment body can be extracted from the Pushshift repository or any other Reddit API using the IDs provided. Refer the paper [The Pushshift Reddit Dataset](https://arxiv.org/pdf/2001.08435.pdf) for more details.
 
-FILES AND FORMAT
+#FILES AND FORMAT
 ----------------
 
 1. Ruddit.csv: This is the main dataset file with 6000 comments and their respective scores. 
@@ -26,7 +26,9 @@ It has three columns (separated by commas):
 
 4. Thread_structure.txt: Printed comment thread tree structure for the 372 unique post IDs included in Ruddit.
 
-SAMPLE QUERY
+5. create_dataset_variants.txt:
+
+#SAMPLE QUERY
 ------------
 Query to extract comment body and other fields from the Pushshift repository using Google BigQuery:
 
