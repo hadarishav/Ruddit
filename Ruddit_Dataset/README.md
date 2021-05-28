@@ -5,7 +5,7 @@ Ruddit is a dataset of English language Reddit comments that has fine-grained, r
 
 Data sampling procedure, annotation, and analysis have been discussed in detail in the accompanying paper.
 
-We provide the comment IDs, post IDs and not the comment body, in accordance to the GDPR regulations. Comment body can be extracted from the Pushshift repository or any other Reddit API using the IDs provided. Refer the paper [The Pushshift Reddit Dataset](https://arxiv.org/pdf/2001.08435.pdf) for more details.
+We provide the comment IDs, post IDs and not the bodies, in accordance to the GDPR regulations. The comments and post bodies can be extracted from any Reddit API using the IDs provided. 
 
 FILES AND FORMAT
 ----------------
@@ -28,13 +28,3 @@ It has three columns (separated by commas):
 
 5. **create_dataset_variants.py**: This file contains code to create the different dataset variants (as specified in the paper).
 - It uses the Python nltk library (`pip install nltk`)
-
-
-SAMPLE QUERY
-------------
-Query to extract comment body and other fields from the Pushshift repository using Google BigQuery:
-
-```SELECT id, body, subreddit, 
-FROM `fh-bigquery.reddit_comments.201*` WHERE REGEXP_CONTAINS(_TABLE_SUFFIX, r"^([5-9]_[0-1][0-9])$")
-and id in ('enter comment ids here')
-```
