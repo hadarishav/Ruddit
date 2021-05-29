@@ -1,2 +1,2 @@
 # Ruddit-Norms-of-Offensiveness-for-English-Reddit-Comments
-This repo contains the dataset and description for Ruddit and its variants.
+This repository contains the dataset and description for Ruddit and its variants. It also contains the model code for the various models reported in the paper.
