@@ -44,8 +44,7 @@ def tokenize_comments(ruddit: str) -> List[List[str]]:
 
 def create_dataset_without_swearwords(ruddit: str, cursing_lexicon: str,
                                       tokenized_comments: List[List[str]],
-                                      variant_save_path: str =
-                                      'no_swearing.csv') -> None:
+                                      variant_save_path: str) -> None:
     """
     Removes the swearwords from the tokenized comments and writes
     the 'no-swearing' version of the dataset to csv.
@@ -73,6 +72,7 @@ def create_dataset_without_swearwords(ruddit: str, cursing_lexicon: str,
     # Get swearwords from the lexicon txt
     swearwords = getswearwords(cursing_lexicon)
 
+    variant_save_path = 'no_swearing.csv' if variant_save_path is None else variant_save_path
     with open(ruddit, 'r', encoding='utf-8') as dfile, \
             open(variant_save_path, 'w', encoding='utf-8') as nfile:
 
@@ -110,8 +110,7 @@ def create_dataset_without_swearwords(ruddit: str, cursing_lexicon: str,
 
 
 def create_dataset_without_identityterms(ruddit: str, identity_file: str,
-                                         variant_save_path: str =
-                                         'identity_agnostic.csv') -> None:
+                                         variant_save_path: str) -> None:
     """
     Replaces the identity terms from the lemmatized comments 
     and writes the 'identity-agnostic' version of the dataset to csv.
@@ -138,6 +137,7 @@ def create_dataset_without_identityterms(ruddit: str, identity_file: str,
     # Get identity terms from the identity txt
     identity_terms = getidentityterms(identity_file)
 
+    variant_save_path = 'identity_agnostic.csv' if variant_save_path is None else variant_save_path
     with open(ruddit, 'r', encoding='utf-8') as ifile, \
             open(variant_save_path, 'w', encoding='utf-8') as ofile:
 
@@ -185,8 +185,7 @@ def create_dataset_without_identityterms(ruddit: str, identity_file: str,
 
 
 def create_dataset_with_reduced_range(ruddit: str,
-                                      variant_save_path: str =
-                                      'reduced_range.csv') -> None:
+                                      variant_save_path: str) -> None:
     """
     Keeps comments having scores from -0.5 and 0.5 and creates
     the 'reduced-range' version of the dataset to csv.
@@ -194,6 +193,7 @@ def create_dataset_with_reduced_range(ruddit: str,
     :param ruddit: Path to the csv containing the dataset.
     :param variant_save_path: Path to save the new dataset variant.
     """
+    variant_save_path = 'reduced_range.csv' if variant_save_path is None else variant_save_path
     with open(ruddit, 'r', encoding='utf-8') as ifile, \
             open(variant_save_path, 'w', encoding='utf-8') as ofile:
 
@@ -234,12 +234,9 @@ if __name__ == '__main__':
         tokenized_comments = tokenize_comments(args.ruddit)
         create_dataset_without_swearwords(ruddit=args.ruddit, cursing_lexicon=args.cursing_lexicon,
                                           tokenized_comments=tokenized_comments,
-                                          variant_save_path=args.variant_save_path if not None
-                                          else "default")
+                                          variant_save_path=args.variant_save_path)
     elif (args.dataset_type == 2):
         create_dataset_without_identityterms(ruddit=args.ruddit, identity_file=args.identity_file,
-                                             variant_save_path=args.variant_save_path if not None
-                                             else "default")
+                                             variant_save_path=args.variant_save_path)
     else:
-        create_dataset_with_reduced_range(ruddit=args.ruddit, variant_save_path=args.variant_save_path if not None
-                                          else "default")
+        create_dataset_with_reduced_range(ruddit=args.ruddit, variant_save_path=args.variant_save_path)
