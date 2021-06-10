@@ -28,3 +28,5 @@ It has three columns (separated by commas):
 
 5. **create_dataset_variants.py**: This file contains code to create the different dataset variants (as specified in the paper).
 - It uses the Python nltk library (`pip install nltk`)
+
+6. **Ruddit_individual_annotations.csv**: This file conains the individual annotations of each 4-tuple.
