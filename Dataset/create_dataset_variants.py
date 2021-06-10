@@ -1,3 +1,4 @@
+import argparse
 import csv
 from typing import List
 
@@ -15,6 +16,7 @@ def tokenize_comments(ruddit: str) -> List[List[str]]:
     """
     Reads ruddit(csv), tokenizes the comments and removes the stop words
     from them and returns a list containing the tokenized comments.
+
     :param ruddit: Path to the csv containing the dataset.
     :return tokenized_comments: Returns a list of list where each list contains
     tokenized words per comment.
@@ -47,6 +49,7 @@ def create_dataset_without_swearwords(ruddit: str, cursing_lexicon: str,
     """
     Removes the swearwords from the tokenized comments and writes
     the 'no-swearing' version of the dataset to csv.
+
     :param ruddit: Path to the csv containing the dataset.
     :param cursing_lexicon: Path to 'cursing_lexicon.txt'.
     :param tokenized_comments: List containing tokenized comments.
@@ -56,6 +59,7 @@ def create_dataset_without_swearwords(ruddit: str, cursing_lexicon: str,
     def getswearwords(cursing_lexicon: str) -> List[str]:
         """
       Extracts swear words from the txt file.
+
       :param cursing_lexicon: Path to 'cursing_lexicon.txt'.
       :return list containing swearwords.
       """
@@ -111,6 +115,7 @@ def create_dataset_without_identityterms(ruddit: str, identity_file: str,
     """
     Replaces the identity terms from the lemmatized comments 
     and writes the 'identity-agnostic' version of the dataset to csv.
+
     :param ruddit: Path to the csv containing the dataset.
     :param identity_file: Path to 'identity_terms.txt'.
     :param variant_save_path: Path to save the new dataset variant.
@@ -119,6 +124,7 @@ def create_dataset_without_identityterms(ruddit: str, identity_file: str,
     def getidentityterms(identity_file):
         """
       Extracts identity terms from the txt file.
+
       :param identity_file: Path to 'identity_terms.txt'.
       :return list containing identity terms.
       """
@@ -132,7 +138,6 @@ def create_dataset_without_identityterms(ruddit: str, identity_file: str,
     # Get identity terms from the identity txt
     identity_terms = getidentityterms(identity_file)
 
-    group_ids = {}
     with open(ruddit, 'r', encoding='utf-8') as ifile, \
             open(variant_save_path, 'w', encoding='utf-8') as ofile:
 
@@ -185,6 +190,7 @@ def create_dataset_with_reduced_range(ruddit: str,
     """
     Keeps comments having scores from -0.5 and 0.5 and creates
     the 'reduced-range' version of the dataset to csv.
+
     :param ruddit: Path to the csv containing the dataset.
     :param variant_save_path: Path to save the new dataset variant.
     """
@@ -208,3 +214,32 @@ def create_dataset_with_reduced_range(ruddit: str,
 
         ifile.close()
         ofile.close()
+
+
+if __name__ == '__main__':
+
+    parser = argparse.ArgumentParser(description="Create Ruddit dataset variant")
+    parser.add_argument('--dataset_type', help="Enter 1 for no-swearing version, 2 for identity_agnostic "
+                        "and 3 for reduced range", default=2, type=int)
+    parser.add_argument('--ruddit', help='Path to Ruddit dataset', default='Ruddit.csv', type=str)
+    parser.add_argument('--cursing_lexicon', help="Path to swearing lexicon", default='cursing_lexicon.txt', type=str)
+    parser.add_argument('--identity_file', help="Path to swearing lexicon", default='identityterms_group.txt', type=str)
+    parser.add_argument('--variant_save_path', help="Path to save the variant", type=str)
+    args = parser.parse_args()
+
+    # Call the appropriate function
+    if(args.dataset_type not in [1, 2, 3]):
+        print('Invalid value for dataset type, assigning value 3.')
+    if (args.dataset_type == 1):
+        tokenized_comments = tokenize_comments(args.ruddit)
+        create_dataset_without_swearwords(ruddit=args.ruddit, cursing_lexicon=args.cursing_lexicon,
+                                          tokenized_comments=tokenized_comments,
+                                          variant_save_path=args.variant_save_path if not None
+                                          else "default")
+    elif (args.dataset_type == 2):
+        create_dataset_without_identityterms(ruddit=args.ruddit, identity_file=args.identity_file,
+                                             variant_save_path=args.variant_save_path if not None
+                                             else "default")
+    else:
+        create_dataset_with_reduced_range(ruddit=args.ruddit, variant_save_path=args.variant_save_path if not None
+                                          else "default")
