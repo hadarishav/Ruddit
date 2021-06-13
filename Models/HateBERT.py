@@ -2,31 +2,42 @@ import argparse
 import csv
 import os
 import time
+from typing import Any, Dict, List, Tuple, Union
 
-from pytorch_lightning.core.lightning import LightningModule
-from pytorch_lightning.callbacks import ModelCheckpoint
 import numpy as np
 import pandas as pd
 import pytorch_lightning as pl
 import torch
-from scipy.stats import kendalltau
-from scipy.stats import spearmanr
-from scipy.stats import pearsonr
+from pytorch_lightning.core.lightning import LightningModule
+from pytorch_lightning.callbacks import ModelCheckpoint
+from scipy.stats import kendalltau, pearsonr, spearmanr
 from torch import nn
 from torch.utils.data import Dataset, DataLoader
 from transformers import BertModel, BertTokenizer, AdamW, get_linear_schedule_with_warmup
+from transformers.tokenization_utils_base import BatchEncoding
 
 # Code inspired by https://towardsdatascience.com/from-pytorch-to-pytorch-lightning-a-gentle-introduction-b371b7caaf09
+GET_ITEM_RETURN = Union[str, BatchEncoding, torch.tensor, int]
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 RANDOM_SEED = 12
 np.random.seed(RANDOM_SEED)
 torch.manual_seed(RANDOM_SEED)
 
 
-class AbuseDataset(Dataset):
+class RudditDataset(Dataset):
+    """
+    Ruddit dataset.
+    """
 
-    def __init__(self, reviews, targets, tokenizer, max_len, ids):
-        self.reviews = reviews
+    def __init__(self, comments: np.array, targets: np.array, tokenizer: BertTokenizer, max_len: int, ids: np.array):
+        """
+        :param comments: Comments from the dataset.
+        :param targets: Scores(targets) assigned to the comments.
+        :param tokenizer: Bert tokenizer to be used.
+        :param max_len: Max length for the BERT tokenizer's encoder.
+        :param ids: Ids for keeping track.
+        """
+        self.reviews = comments
         self.targets = targets
         self.tokenizer = tokenizer
         self.max_len = max_len
@@ -35,7 +46,7 @@ class AbuseDataset(Dataset):
     def __len__(self):
         return len(self.reviews)
 
-    def __getitem__(self, item):
+    def __getitem__(self, item: int) -> Dict[str, GET_ITEM_RETURN]:
         review = str(self.reviews[item])
         target = self.targets[item]
 
@@ -60,23 +71,30 @@ class AbuseDataset(Dataset):
         }
 
 
-class AbuseLightning(LightningModule):
+class RudditLightning(LightningModule):
+    """
+    Ruddit lightning module.
+    """
 
-    def __init__(self, df_train, df_val, df_test, config):
-
-        super(AbuseLightning, self).__init__()
+    def __init__(self, df_train: pd.DataFrame, df_val: pd.DataFrame, df_test: pd.DataFrame, config: Dict):
+        """
+        :param df_train: Dataframe containing train data.
+        :param df_val: Dataframe containing validation data.
+        :param df_test: Dataframe containing test data.
+        :param config: Config containing different model parameters.
+        """
+        super(RudditLightning, self).__init__()
         self.save_hyperparameters()
         self.df_train = df_train
         self.df_val = df_val
         self.df_test = df_test
         self.config = config
-        self.n_classes = config['abuse_classes']
 
+        self.n_classes = config['num_classes']
         self.max_len = config['max_len']
         self.batch_size = config['batch_size']
         self.max_epochs = config['num_epochs']
-
-        self.PRE_TRAINED_MODEL_NAME = config['PRE_TRAINED_MODEL_NAME']
+        self.PRE_TRAINED_MODEL_NAME = config['PRE_TRAINED_MODEL']
         self.bert = BertModel.from_pretrained(self.PRE_TRAINED_MODEL_NAME)
         self.drop = nn.Dropout(p=config['fc_dropout'])
         extra_dropout = config['bert_dropout']
@@ -87,38 +105,40 @@ class AbuseLightning(LightningModule):
         self.out = nn.Linear(self.bert.config.hidden_size, self.n_classes)
         self.loss = nn.MSELoss().to(self.device)
 
-    ################################ DATA PREPARATION ############################################
+    # Data Preparation
+    def __retrieve_dataset(self, train: bool = True, val: bool = True, test: bool = True) -> RudditDataset:
+        """
+        Retrieves task specific dataset.
 
-    def __retrieve_dataset(self, train=True, val=True, test=True):
-
-        """ Retrieves task specific dataset """
+        :param train: Flag. If true, returns train dataloader.
+        :param val: Flag. If true, returns val dataloader.
+        :param test: Flag. If true, returns test dataloader.
+        :return: Train/Val/Test dataloader.
+        """
         # return retrieve_data(train, val, test)
         self.tokenizer = BertTokenizer.from_pretrained(self.PRE_TRAINED_MODEL_NAME)
 
         if train:
-            ds = AbuseDataset(reviews=self.df_train.comment.to_numpy(), targets=self.df_train.Score.to_numpy(),
-                              tokenizer=self.tokenizer, max_len=self.max_len, ids=self.df_train.k_id)
+            ds = RudditDataset(comments=self.df_train.comment.to_numpy(), targets=self.df_train.Score.to_numpy(),
+                               tokenizer=self.tokenizer, max_len=self.max_len, ids=self.df_train.k_id)
         if val:
-            ds = AbuseDataset(reviews=self.df_val.comment.to_numpy(), targets=self.df_val.Score.to_numpy(),
-                              tokenizer=self.tokenizer, max_len=self.max_len, ids=self.df_val.k_id)
+            ds = RudditDataset(comments=self.df_val.comment.to_numpy(), targets=self.df_val.Score.to_numpy(),
+                               tokenizer=self.tokenizer, max_len=self.max_len, ids=self.df_val.k_id)
         if test:
-            ds = AbuseDataset(reviews=self.df_test.comment.to_numpy(), targets=self.df_test.Score.to_numpy(),
-                              tokenizer=self.tokenizer, max_len=self.max_len, ids=self.df_test.k_id)
+            ds = RudditDataset(comments=self.df_test.comment.to_numpy(), targets=self.df_test.Score.to_numpy(),
+                               tokenizer=self.tokenizer, max_len=self.max_len, ids=self.df_test.k_id)
         return ds
 
-    # @pl.data_loader
     def train_dataloader(self):
         self._train_dataset = self.__retrieve_dataset(val=False, test=False)
         return DataLoader(dataset=self._train_dataset, batch_size=self.batch_size, num_workers=4, shuffle=True)
 
-    # @pl.data_loader
     def test_dataloader(self):
         self._test_dataset = self.__retrieve_dataset(train=False, val=False)
         return DataLoader(dataset=self._test_dataset, batch_size=self.batch_size, num_workers=4)
 
-    ################################ MODEL AND TRAINING PREPARATION ############################################
-
-    def forward(self, input_ids, attention_mask):
+    # Model and Training Preparation
+    def forward(self, input_ids: BatchEncoding, attention_mask: BatchEncoding) -> torch.Tensor:
         outputs = self.bert(
             input_ids=input_ids,
             attention_mask=attention_mask
@@ -126,11 +146,17 @@ class AbuseLightning(LightningModule):
         pooled_output = outputs[0].mean(dim=1)
         # pooled_output = self.bn(pooled_output)
         output = self.drop(pooled_output)
-
         return self.out(output)
 
-    def training_step(self, d, batch_idx):
+    def training_step(self,  d: Dict[str, GET_ITEM_RETURN], batch_idx: int) \
+            -> Dict[str, Union[np.ndarray, np.ndarray, torch.FloatTensor]]:
+        """
+        Lightning, training step.
 
+        :param d: Batch containing review text, input ids, attention masks, targets and ids.
+        :param batch_idx: Id of the batch (Lightning requirement).
+        :return: Dictionary for train_epoch_end.
+        """
         if (self.current_epoch > 5):
             # print('Freezing Bert!')
             for param in self.bert.encoder.parameters():
@@ -149,8 +175,15 @@ class AbuseLightning(LightningModule):
 
         return {'prediction': p, 'target': t, 'loss': loss}
 
-    def test_step(self, d, batch_idx):
+    def test_step(self, d: Dict[str, GET_ITEM_RETURN], batch_idx: int) \
+            -> Dict[str, Union[np.ndarray, np.ndarray, torch.FloatTensor]]:
+        """
+        Lightning, test step.
 
+        :param d: Batch containing review text, input ids, attention masks, targets and ids.
+        :param batch_idx: Id of the batch (Lightning requirement).
+        :return: Dictionary for test_epoch_end.
+        """
         input_ids = d["input_ids"].to(self.device)
         attention_mask = d["attention_mask"].to(self.device)
         targets = d["targets"].to(self.device)
@@ -164,18 +197,23 @@ class AbuseLightning(LightningModule):
 
         return {'prediction': p, 'target': t, 'loss': loss, 'ids': ids}
 
-    def configure_optimizers(self):
+    def configure_optimizers(self) -> Tuple[List[Union[AdamW, torch.optim.Optimizer]], list]:
+        """
+        Configure the optimizer and/or scheduler.
 
+        :return: chosen optimizer, scheduler
+        """
         optimizer = AdamW(self.parameters(), lr=self.config['lr'], correct_bias=False)
         total_steps = len(self.train_dataloader()) * self.max_epochs
         scheduler = get_linear_schedule_with_warmup(optimizer, num_warmup_steps=0, num_training_steps=total_steps)
         return [optimizer], [scheduler]
 
-    def training_epoch_end(self, outputs):
+    def training_epoch_end(self, outputs: list) -> None:
+        """
+        Called at the end of training epoch.
 
-        # called at the end of the training epoch
-        # outputs is an array with what you returned in validation_step for each batch
-        # outputs = [{'loss': batch_0_loss}, {'loss': batch_1_loss}, ..., {'loss': batch_n_loss}]
+        :param outputs: List with what is returned in train_step for each batch.
+        """
         avg_loss = torch.stack([x['loss'] for x in outputs]).mean()
         p = []
         for x in outputs:
@@ -191,12 +229,13 @@ class AbuseLightning(LightningModule):
                                                                                           avg_loss))
         self.log('train_loss', avg_loss, logger=True)
         self.log('train_pearson', tensor_pear, logger=True)
-        # return {'pearson':tensor_pear, 'spearman':spear[0], 'kendall':tau[0], 'loss': avg_loss, 'log': logs}
 
-    def test_epoch_end(self, outputs):
-        # called at the end of the validation epoch
-        # outputs is an array with what you returned in validation_step for each batch
-        # outputs = [{'loss': batch_0_loss}, {'loss': batch_1_loss}, ..., {'loss': batch_n_loss}]
+    def test_epoch_end(self, outputs: list) -> Dict[str, Any]:
+        """
+        Called at the end of test epoch.
+
+        :param outputs: List with what is returned in test_step for each batch.
+        """
         avg_loss = torch.stack([x['loss'] for x in outputs]).mean()
         p = []
         ids = []
@@ -230,23 +269,27 @@ class AbuseLightning(LightningModule):
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description="Enter args")
-    parser.add_argument('--PRE_TRAINED_MODEL_NAME', help='path to pretrained hatebert model',
+    parser.add_argument('--PRE_TRAINED_MODEL', required=True, help='path to pretrained hatebert model',
                         default="/content/drive/MyDrive/hatebert", type=str)
     parser.add_argument('--batch_size', default=64, type=int)
     parser.add_argument('--max_len', help='max length for BERT tokenizer', default=200, type=int)
-    parser.add_argument('--abuse_classes', help='number of classes', default=1, type=int)
+    parser.add_argument('--num_classes', help='number of classes', default=1, type=int)
     parser.add_argument('--bert_dropout', help='additional dropout to BERT encoder', default=0.0, type=float)
     parser.add_argument('--fc_dropout', help='dropout to regression head', default=0.0, type=float)
     parser.add_argument('--num_epochs', default=3, type=int)
     parser.add_argument('--lr', default=2e-5, type=float)
+    parser.add_argument('--path_to_train_splits', required=True, help='Path to the folder containing train splits',
+                        type=str)
+    parser.add_argument('--path_to_test_splits', required=True, help='Path to the folder containing test splits',
+                        type=str)
     # parser.add_argument('--wd', default=1e-4, type=float)
     args = parser.parse_args()
 
     config = {
-        'PRE_TRAINED_MODEL_NAME': args.PRE_TRAINED_MODEL_NAME,
+        'PRE_TRAINED_MODEL': args.PRE_TRAINED_MODEL_NAME,
         'batch_size': args.batch_size,
         'max_len': args.max_len,
-        'abuse_classes': args.abuse_classes,
+        'num_classes': args.num_classes,
         'bert_dropout': args.bert_dropout,
         'fc_dropout': args.fc_dropout,
         'device': torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu'),
@@ -259,12 +302,12 @@ if __name__ == "__main__":
 
     for k in range(1, 6):
         print('********************DOING FOLD************************', k)
-        df_train = pd.read_csv('train' + str(k) + '.csv')
-        df_test = pd.read_csv('test' + str(k) + '.csv')
+        df_train = pd.read_csv(f'{args.path_to_train_splits}/train{str(k)}.csv')
+        df_test = pd.read_csv(f'{args.path_to_test_splits}/test{str(k)}.csv')
         print('Train:', df_train.shape, ' Test:', df_test.shape)
         start_time = time.time()
 
-        model = AbuseLightning(df_train, [], df_test, config)
+        model = RudditLightning(df_train, [], df_test, config)
 
         checkpoint_callback = ModelCheckpoint(
             save_top_k=1,
