@@ -1,9 +1,9 @@
-Ruddit Norms of Offensiveness for English Reddit Comments
----------------------------------------------------------------
+Ruddit: Norms of Offensiveness for English Reddit Comments
+----------------------------------------------------------
 
-* This repository contains the dataset (with only comment and post ids) for Ruddit and the code for creating it's variants and for training the models, as reported in the paper.
+Ruddit is a dataset of English language Reddit comments that has fine-grained, real-valued scores between -1 (maximally supportive) and 1 (maximally offensive). Data sampling procedure, annotation, and analysis have been discussed in detail in the accompanying paper. We provide the comment IDs, post IDs and not the bodies, in accordance to the GDPR regulations. The comments and post bodies can be extracted from any Reddit API using the IDs provided. 
 
-The repository is structured as follows:
+This repository contains the dataset (with only comment and post ids) for Ruddit and the code for creating it's variants and for training the models, as reported in the paper. The repository is structured as follows:
 
 ```bash
 .
