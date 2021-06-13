@@ -119,7 +119,6 @@ def create_dataset_without_identityterms(ruddit: str, identity_file: str,
     :param identity_file: Path to 'identity_terms.txt'.
     :param variant_save_path: Path to save the new dataset variant.
     """
-
     def getidentityterms(identity_file):
         """
       Extracts identity terms from the txt file.
