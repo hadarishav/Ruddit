@@ -29,4 +29,9 @@ It has three columns (separated by commas):
 5. **create_dataset_variants.py**: This file contains code to create the different dataset variants (as specified in the paper).
 - It uses the Python nltk library (`pip install nltk`)
 
-6. **Ruddit_individual_annotations.csv**: This file conains the individual annotations of each 4-tuple.
+6. **Ruddit_individual_annotations.csv**: This file contains the individual annotations of each 4-tuple.
+
+7. **sample_input_file.csv**: This file contains 6000 comments(ids) from the dataset sorted according to the offensiveness score. This is the format in which the file should be fed to `create_splits.py`. It has 3 columns:
+- comment: The ID of the comment for which the offensiveness score is provided. This should be replaced by the original comment, once extracted.
+- Score: The degree of offensiveness score of the comment.
+- k_id: a serial id, starting from 1, for each comment in the dataset 

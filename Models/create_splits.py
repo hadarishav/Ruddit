@@ -74,7 +74,7 @@ def plot_all_folds(path_to_folds: str = None) -> None:
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description="Create folds for training and testing")
-    parser.add_argument('--filename', help="Path to Ruddit (or its variant)", default="Ruddit.csv", type=str)
+    parser.add_argument('--filename', help="Path to Ruddit (or its variant)", default="sample_input_file.csv", type=str)
     parser.add_argument('--plot', help="1 for plotting, 0 otherwise", default=0, type=int)
     parser.add_argument('--save_path', help="Path to the folder to create the folds in", type=str)
     parser.add_argument('--dataset_range',

@@ -7,10 +7,7 @@ Install the required packages using `pip install -r requirements.txt`
 FILES AND INSTRUCTIONS
 ----------------------
 
-1. The dataset should be provided in a csv format with at least the following column headers: [comment, Score, k_id] where 
-- **comment**: is the comment body
-- **Score**: is the offensiveness score of the comment
-- **k_id**: is a serial id, starting from 1, for each comment in the dataset 
+1. In order to create train and test splits for the models, `create_splits.py` should be used. This script requires the dataset to be sorted according to the offensiveness scores and an additional column `k_id` (with row numbers). A sample input file can be found here: `Dataset/sample_input_file.csv`. Comment_ids can be replaced with comments, once extracted (but the script can be tested without replacing the comments as well).
 
 2. **create_splits.py**: This file creates 5-folds of data for cross validation according to sorted stratification: <https://scottclowe.com/2016-03-19-stratified-regression-partitions/>
 - To run this file: `python create_splits.py --filename PATH_TO_DATASET --plot FLAG --save_path PATH TO SAVE FOLDS --dataset_range 1`
