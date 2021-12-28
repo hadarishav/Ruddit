@@ -310,7 +310,7 @@ if __name__ == "__main__":
             monitor='train_loss',
             mode='min')
 
-        trainer = pl.Trainer(gpus=1, progress_bar_refresh_rate=0, max_epochs=config['num_epochs'],
+        trainer = pl.Trainer(gpus=torch.cuda.device_count(), progress_bar_refresh_rate=0, max_epochs=config['num_epochs'],
                              checkpoint_callback=checkpoint_callback)
         trainer.fit(model)
         test_results = trainer.test(model)
