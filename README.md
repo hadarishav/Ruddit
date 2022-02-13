@@ -5,6 +5,8 @@ Ruddit is a dataset of English language Reddit comments that has fine-grained, r
 
 The paper can be found here: [Ruddit: Norms of Offensiveness for English Reddit Comments](https://aclanthology.org/2021.acl-long.210/)
 
+Our online talk for ACL 2021 can be found [here](https://screencast-o-matic.com/watch/cr1Z3zV1UH0).
+
 If you use our work, please cite us:
 
 ```bash
